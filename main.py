@@ -1,6 +1,6 @@
 import uuid
 from matplotlib.animation import FuncAnimation
-import numpy as np
+import numpy as cp
 import matplotlib.pyplot as plt
 import scipy
 import scipy.constants
@@ -33,7 +33,7 @@ def getAcc( pos, mass, G, softening ):
 	az = G * (dz * inv_r3) @ mass
 	
 	# pack together the acceleration components
-	a = np.hstack((ax,ay,az))
+	a = cp.hstack((ax,ay,az))
 
 	return a
 	
@@ -48,8 +48,7 @@ def getEnergy( pos, vel, mass, G ):
 	PE is the potential energy of the system
 	"""
 	# Kinetic Energy:
-	KE = 0.5 * np.sum(np.sum( mass * vel**2 ))
-
+	KE = 0.5 * cp.sum(cp.sum( mass * vel**2 ))
 
 	# Potential Energy:
 
@@ -64,11 +63,11 @@ def getEnergy( pos, vel, mass, G ):
 	dz = z.T - z
 
 	# matrix that stores 1/r for all particle pairwise particle separations 
-	inv_r = np.sqrt(dx**2 + dy**2 + dz**2)
+	inv_r = cp.sqrt(dx**2 + dy**2 + dz**2)
 	inv_r[inv_r>0] = 1.0/inv_r[inv_r>0]
 
 	# sum over upper triangle, to count each interaction only once
-	PE = G * np.sum(np.sum(np.triu(-(mass*mass.T)*inv_r,1)))
+	PE = G * cp.sum(cp.sum(cp.triu(-(mass*mass.T)*inv_r,1)))
 	
 	return KE, PE
 
@@ -76,32 +75,32 @@ def getEnergy( pos, vel, mass, G ):
 """ N-body simulation """
 
 # Simulation parameters
-N         = 5000    # Number of particles
+N         = 1000   # Number of bodies
 t         = 0      # current time of the simulation
-tEnd      = 10.0   # time at which simulation ends
+tEnd      = 5.0   # time at which simulation ends
 dt        = 0.01   # timestep
 softening = 0.1    # softening length
 G         = scipy.constants.G  # Newton's Gravitational Constant
 plotRealTime = True # switch on for plotting as the simulation goes along
 
 # Generate Initial Conditions
-np.random.seed(17)            # set the random number generator seed
+cp.random.seed(17)            # set the random number generator seed
 
-# mass = 20.0*np.ones((N,1))/N  # total mass of particles is 20
+# mass = 20.0*cp.ones((N,1))/N  # total mass of particles is 20
 # Generate random masses
 mass_min = 100.0
-mass_max = 1*10**8
-mass = np.random.uniform(mass_min, mass_max, size=(N, 1))
+mass_max = 1*10**7
+mass = cp.random.uniform(mass_min, mass_max, size=(N, 1))
 
 # Normalize masses to sum up to 20.0
-total_mass = np.sum(mass)
+total_mass = cp.sum(mass)
 # mass /= total_mass
 # mass *= 20.0
-pos  = np.random.randn(N,3)   # randomly selected positions
-vel = np.zeros((N, 3))
+pos  = cp.random.randn(N,3)   # randomly selected positions
+vel = cp.zeros((N, 3))
 
 # Convert to Center-of-Mass frame
-vel -= np.mean(mass * vel,0) / np.mean(mass)
+vel -= cp.mean(mass * vel,0) / cp.mean(mass)
 
 # calculate initial gravitational accelerations
 acc = getAcc( pos, mass, G, softening )
@@ -110,35 +109,29 @@ acc = getAcc( pos, mass, G, softening )
 KE, PE  = getEnergy( pos, vel, mass, G )
 
 # number of timesteps
-Nt = int(np.ceil(tEnd/dt))
+Nt = int(cp.ceil(tEnd/dt))
 
 # save energies, particle orbits for plotting trails
-pos_save = np.zeros((N,3,Nt+1))
+pos_save = cp.zeros((N,3,Nt+1))
 pos_save[:,:,0] = pos
-KE_save = np.zeros(Nt+1)
+KE_save = cp.zeros(Nt+1)
 KE_save[0] = KE
-PE_save = np.zeros(Nt+1)
+PE_save = cp.zeros(Nt+1)
 PE_save[0] = PE
-t_all = np.arange(Nt+1)*dt
+t_all = cp.arange(Nt+1)*dt
 
 # prep figure
-# fig = plt.figure(figsize=(14, 10), dpi=80, facecolor="black")
-fig = plt.figure(figsize=(14, 10), dpi=80, facecolor="black")
+fig = plt.figure(figsize=(14, 10), dpi=300, facecolor="black")
 gs = fig.add_gridspec(1, 1)  # A single subplot that spans the entire figure
 ax1 = fig.add_subplot(gs[0, 0])
 ax1.set_facecolor('black')
-manager = plt.get_current_fig_manager()
-manager.full_screen_toggle()
-"""
-Create Your Own N-body Simulation (With Python)
-Philip Mocz (2020) Princeton Univeristy, @PMocz
+# manager = plt.get_current_fig_manager()
+# manager.resize(1920, 1080)
 
-Simulate orbits of stars interacting due to gravity
-Code calculates pairwise forces according to Newton's Law of Gravity
-"""
+# Aggiorna il plot
 def update_plot(i, ax1, pos_save, pos, vel, t, acc):
     # (1/2) kick
-    vel += acc * dt/2.0
+    vel += acc * dt/4.0
     
     # drift
     pos += vel * dt
@@ -147,26 +140,19 @@ def update_plot(i, ax1, pos_save, pos, vel, t, acc):
     acc = getAcc( pos, mass, G, softening )
     
     # (1/2) kick
-    vel += acc * dt/2.0
+    vel += acc * dt/4.0
     
     # update time
     t += dt
     
-    # get energy of system
-    KE, PE  = getEnergy( pos, vel, mass, G )
+    # # get energy of system
+    # KE, PE  = getEnergy( pos, vel, mass, G )
     
-    # save energies, positions for plotting trail
-    pos_save[:,:,i+1] = pos
-    KE_save[i+1] = KE
-    PE_save[i+1] = PE
-
     # plot in real time
     if plotRealTime or (i == Nt-1):
         plt.cla()
-        xx = pos_save[:,0,max(i-50,0):i+1]
-        yy = pos_save[:,1,max(i-50,0):i+1]
         # plt.scatter(xx,yy,s=1,color=[.7,.7,1])
-        plt.scatter(pos[:,0],pos[:,1],s=mass[:,0]*5*10**(-10),color='red')
+        plt.scatter(pos[:,0],pos[:,1],s=mass[:,0]*5*10**(-8),color='red')
         ax1.set(xlim=(0, 0), ylim=(-1, 1))
         ax1.set_aspect('auto')
         ax1.set_xticks([-2,-1,0,1,2])
@@ -175,12 +161,12 @@ def update_plot(i, ax1, pos_save, pos, vel, t, acc):
         # Add a text annotation for the current time step
         ax1.text(-2, 2.0, f"Time step: {i}/{Nt}", fontsize=12, color='white', ha='left', va='top')
         ax1.text(-2, 2.1, f"Total bodies: {N}", fontsize=12, color='white', ha='left', va='top')
-        
-        plt.pause(0.0001)
+        print(f"Time step: {i}/{Nt}")
+        # plt.pause(0.001)
 
 animation = FuncAnimation(fig, update_plot, fargs=(ax1, pos_save, pos, vel, t, acc), frames=Nt, interval=50)
 
-# Save the animation as an mp4 file
-animation.save(f'nbody_animation_{uuid.uuid4()}.gif', writer='pillow', fps=30)
+# Save the animation as a gif file
+animation.save(f'nbody_animation_{uuid.uuid4()}.gif', fps=30)
 
 # plt.show()
