@@ -1,24 +1,45 @@
+import math
 import numpy as cp
+
+def get_star_brightness(mass):
+    if 100.0 <= mass <= 250.0:
+        return 10   # Light Sky Blue
+    elif 250.1 <= mass <= 500.0:
+        return 20   # Deep Sky Blue
+    elif 500.1 <= mass <= 800.0:
+        return 50   # White
+    elif 800.1 <= mass <= 1200.0:
+        return 100     # Gold
+    elif 1200.1 <= mass <= 2500.0:
+        return 150     # Orange
+    elif 2500.1 <= mass <= 6000.0:
+        return 200      # Orange Red
+    elif 6000.1 <= mass <= 10000.0:
+        return 225     # Firebrick
+    elif 10000.1 <= mass <= 1e11:
+        return 255      # Dark Red
+    else:
+        return 255
 
 def get_star_color_by_mass(mass):
     if 100.0 <= mass <= 250.0:
-        return (135, 206, 250)   # Light Sky Blue
+        return (255, 140, 102, get_star_brightness(mass))   # Light Sky Blue
     elif 250.1 <= mass <= 500.0:
-        return (0, 191, 255)     # Deep Sky Blue
+        return (255, 218, 185, get_star_brightness(mass))     # Deep Sky Blue
     elif 500.1 <= mass <= 800.0:
-        return (255, 255, 255)   # White
+        return (255, 247, 239, get_star_brightness(mass))   # White
     elif 800.1 <= mass <= 1200.0:
-        return (255, 215, 0)     # Gold
+        return (243, 244, 255, get_star_brightness(mass))     # Gold
     elif 1200.1 <= mass <= 2500.0:
-        return (252, 100, 3)     # Orange
+        return (202, 216, 255, get_star_brightness(mass))     # Orange
     elif 2500.1 <= mass <= 6000.0:
-        return (252, 194, 3)      # Orange Red
+        return (170, 191, 255, get_star_brightness(mass))      # Orange Red
     elif 6000.1 <= mass <= 10000.0:
-        return (255,255,153)     # Firebrick
+        return (155, 176, 255, get_star_brightness(mass))     # Firebrick
     elif 10000.1 <= mass <= 1e11:
-        return (128, 172, 255)       # Dark Red
+        return (155, 176, 255, get_star_brightness(mass))       # Dark Red
     else:
-        return (135, 206, 250)
+        return (155, 176, 255, get_star_brightness(mass))
 
 
 def is_particle_outside_box(x, y, xmin, ymin, xmax, ymax):
@@ -59,6 +80,28 @@ def addBody(pos, mass, vel, acc, N, body_pos, body_mass_min, body_mass_max):
 
     return pos, mass, vel, acc
 
+def place_particles_in_circle(ParticlesCount, window_size, start_span):
+    center_x, center_y = window_size[0] / 2, window_size[1] / 2
+    radius = start_span / 2  # Assuming start_span represents the diameter of the circular area
+
+    # Generate random angles in radians between 0 and 2*pi
+    angles = cp.random.uniform(0, 2 * cp.pi, size=ParticlesCount)
+
+    # Generate random radial distances with square root for more uniform particle distribution
+    r = cp.sqrt(cp.random.uniform(0, 1, size=ParticlesCount)) * radius
+
+    # Convert polar coordinates to Cartesian coordinates
+    x = center_x + r * cp.cos(angles)
+    y = center_y + r * cp.sin(angles)
+
+    # Set z-coordinate to 0 (assuming 2D space)
+    z = cp.zeros(ParticlesCount)
+
+    # Combine x, y, and z coordinates to get the positions array
+    pos = cp.column_stack((x, y, z))
+
+    return pos
+
 
 def addBlackHoles(pos, mass, vel, acc, N, body_pos):
     """
@@ -73,7 +116,7 @@ def addBlackHoles(pos, mass, vel, acc, N, body_pos):
         
     body_pos = cp.array([body_pos[0], body_pos[1], 0])
     # Generate 3 random masses for the black holes
-    bh_mass = cp.random.uniform(1000, 100000, size=(N, 1))
+    bh_mass = cp.random.uniform(100, 10000, size=(N, 1))
 
     # Set the masses of the black holes to be very large
     bh_mass *= 1*10**2

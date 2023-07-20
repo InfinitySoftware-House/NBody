@@ -1,2 +1,5 @@
 /.DS_Store
 /Videos
+/dist
+/build
+*.mp4
