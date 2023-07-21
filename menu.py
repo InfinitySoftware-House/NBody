@@ -70,10 +70,12 @@ class Menu:
         black_hole_text = font.render("B:      Add Black Hole", True, (255, 255, 255))
         body_text = font.render("A:    Add Body", True, (255, 255, 255))
         stop_recording = font.render("T:    Stop Recording", True, (255, 255, 255))
+        scroll_mode = font.render("S:      Scroll Mode", True, (255, 255, 255))
         self.screen.blit(hide_menu_text, (10, 120))
         self.screen.blit(time_step_text, (10, 140))
         self.screen.blit(black_hole_text, (10, 160))
         self.screen.blit(body_text, (10, 180))
+        self.screen.blit(scroll_mode, (10, 200))
         if record_enabled:
             self.screen.blit(stop_recording, (10, 220))
         pygame.display.flip()

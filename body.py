@@ -1,8 +1,7 @@
-import math
 import numpy as cp
-from numba import njit
+from numba import jit
 
-@njit(fastmath=True)
+@jit(fastmath=True)
 def get_star_brightness(mass):
     if 100.0 <= mass <= 250.0:
         return 10   # Light Sky Blue
@@ -23,7 +22,7 @@ def get_star_brightness(mass):
     else:
         return 255
 
-@njit(fastmath=True)
+@jit(fastmath=True)
 def get_star_color_by_mass(mass):
     if 100.0 <= mass <= 250.0:
         return (255, 140, 102, get_star_brightness(mass))   # Light Sky Blue
@@ -44,7 +43,7 @@ def get_star_color_by_mass(mass):
     else:
         return (155, 176, 255, get_star_brightness(mass))
 
-@njit(fastmath=True)
+@jit(fastmath=True)
 def is_particle_outside_box(x, y, xmin, ymin, xmax, ymax):
     """
     Check if the particle's coordinates (x, y) are outside the bounding box.
@@ -83,7 +82,7 @@ def addBody(pos, mass, vel, acc, N, body_pos, body_mass_min, body_mass_max):
 
     return pos, mass, vel, acc
 
-@njit(fastmath=True)
+@jit(fastmath=True)
 def place_particles_in_circle(ParticlesCount, window_size, start_span):
     center_x, center_y = window_size[0] / 2, window_size[1] / 2
     radius = start_span / 2  # Assuming start_span represents the diameter of the circular area
@@ -132,7 +131,7 @@ def addBlackHoles(pos, mass, vel, acc, N, body_pos):
 
     return pos, mass, vel, acc
 
-@njit(fastmath=True)
+@jit(fastmath=True)
 def getAcc(pos, mass, G, softening):
     """
     Calculate the acceleration on each particle due to Newton's Law 

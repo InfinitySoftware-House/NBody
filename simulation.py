@@ -40,7 +40,8 @@ class Simulation:
     def run(self):
         show_legend = True
         add_black_hole_mode = False
-        add_body_mode = False  
+        add_body_mode = False 
+        scroll_mode = False 
         
         menuClass = m.Menu(screen=self.screen, window_size=self.window_size, simulation=self, 
                                            ParticlesCount=self.ParticlesCount, softening=self.softening, 
@@ -148,12 +149,18 @@ class Simulation:
                         self.zoom_factor += self.zoom_increment
                     elif event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
                         self.zoom_factor -= self.zoom_increment
+                        
+                    if event.key == pygame.K_s:
+                        scroll_mode = not scroll_mode
+                        if not scroll_mode:
+                            self.pan_offset_x = 0
+                            self.pan_offset_y = 0
 
             mouse_buttons = pygame.mouse.get_pressed()
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
             # Handle panning based on mouse input
-            if mouse_buttons[0]:  # Left mouse button is pressed
+            if mouse_buttons[0] and scroll_mode:  # Left mouse button is pressed
                 # Calculate pan velocity based on mouse movement
                 self.pan_velocity_x = (mouse_x - self.window_size[0] // 2) * pan_speed
                 self.pan_velocity_y = (mouse_y - self.window_size[1] // 2) * pan_speed
@@ -196,12 +203,8 @@ class Simulation:
             game_text.addText(self.screen, f"Years: {int(i)}/{Nt}", (10, 10))
             game_text.addText(self.screen, f"Bodies in view: {current_bodies}", (10, 30))
             game_text.addText(self.screen, f"RAM used: {psutil.virtual_memory()[3]/1000000000:.2f} GB", (10, self.window_size[1] - 60))
-            
-            if self.is_video_enabled:
-                video.make_png(screen=self.screen)
-                
-            if show_legend:
-                menuClass.show_legend_sim(record_enabled=self.is_video_enabled)
+            if scroll_mode:
+                game_text.addText(self.screen, "Scroll mode ON", (10, self.window_size[1] - 20))
             
             if add_black_hole_mode:
                 game_text.addText(self.screen, "Click to add a black hole", (10, self.window_size[1] - 40))
@@ -209,6 +212,12 @@ class Simulation:
             if add_body_mode:
                 game_text.addText(self.screen, "Click to add a body", (10, self.window_size[1] - 40))
            
+            if self.is_video_enabled:
+                video.make_png(screen=self.screen)
+                
+            if show_legend:
+                menuClass.show_legend_sim(record_enabled=self.is_video_enabled)
+            
             self.clock.tick(60)
             pygame.display.flip()
             
