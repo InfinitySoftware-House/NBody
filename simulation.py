@@ -1,5 +1,8 @@
 import datetime
+import math
 import os
+import random
+import time
 import numpy as np
 import pygame
 import body
@@ -9,6 +12,11 @@ import menu as m
 from game_text import GameText as gt
 
 class Simulation:
+    pan_offset_x, pan_offset_y = 0, 0
+    pan_velocity_x, pan_velocity_y = 0, 0
+    zoom_factor = 1.0
+    zoom_increment = 0.1
+        
     def __init__(self, window_size, screen, clock, ParticlesCount, t, tEnd, dt, softening, G, is_video_enabled, moltiplicatore_tempo, on_change_particles_count, on_softening_change, moltiplicatore_tempo_change, toggle_video, on_change_time, on_change_start_span, start_span):
         self.window_size = window_size
         self.screen = screen
@@ -43,7 +51,7 @@ class Simulation:
                                            on_change_time=self.on_change_time, on_change_start_span=self.on_change_start_span)
         
         # Generate Initial Conditions
-        np.random.seed(17)            # set the random number generator seed
+        np.random.seed(random.randint(0, self.ParticlesCount))            # set the random number generator seed
 
         # Generate random masses
         mass_min = 1.0*10**2
@@ -71,9 +79,18 @@ class Simulation:
 
         current_bodies = self.ParticlesCount
 
+        total_time = 0
+        iteration_count = 0
+        
         # Main simulation loop
         i = 0
-        for i in range(Nt):
+        game_text = gt(self.clock)
+        font = pygame.font.Font(None, 24)
+        pan_speed = 0.1
+        while 1:
+            if i >= Nt:
+                break
+            start_time = time.time()
             # (1/2) kick
             vel += acc * self.dt * self.moltiplicatore_tempo
             
@@ -88,7 +105,7 @@ class Simulation:
             
             # Update time
             self.t += self.dt
-            i += 1
+            i += 1 * self.moltiplicatore_tempo/1*10**-8
             
             # Event handling (quit the simulation when window is closed)
             for event in pygame.event.get():
@@ -96,15 +113,14 @@ class Simulation:
                     shutil.rmtree(videoFolderPath)
                     pygame.quit()
                     quit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         if add_black_hole_mode:
                             pos, mass, vel, acc = body.addBlackHoles(pos, mass, vel, acc, 1, event.pos)
                         elif add_body_mode:
                             pos, mass, vel, acc = body.addBody(pos, mass, vel, acc, 1, event.pos, mass_min, mass_max)
                         self.ParticlesCount = len(pos)
-                        
-                if event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         menu = menuClass.get_menu()
                         menu = menuClass.draw_menu(menu)
@@ -122,50 +138,78 @@ class Simulation:
                         add_body_mode = not add_body_mode
                         add_black_hole_mode = False
                         
-                    if event.key == pygame.K_t:
+                    if event.key == pygame.K_t and self.is_video_enabled:
                         self.is_video_enabled = False
                         video.make_mp4()
                         shutil.rmtree(videoFolderPath)
+                        
+                    # Zoom
+                    if event.key == pygame.K_PLUS or event.key == pygame.K_KP_PLUS:
+                        self.zoom_factor += self.zoom_increment
+                    elif event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
+                        self.zoom_factor -= self.zoom_increment
 
+            mouse_buttons = pygame.mouse.get_pressed()
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+
+            # Handle panning based on mouse input
+            if mouse_buttons[0]:  # Left mouse button is pressed
+                # Calculate pan velocity based on mouse movement
+                self.pan_velocity_x = (mouse_x - self.window_size[0] // 2) * pan_speed
+                self.pan_velocity_y = (mouse_y - self.window_size[1] // 2) * pan_speed
+
+                # Update the pan offset based on the pan velocity
+                self.pan_offset_x += self.pan_velocity_x
+                self.pan_offset_y += self.pan_velocity_y
+            elif mouse_buttons[1]:
+                self.pan_offset_x = 0
+                self.pan_offset_y = 0
+                              
             self.screen.fill('black')
             
             current_bodies = 0
             circle_radius = 0.5
-            ellipse_size = (circle_radius * 2, circle_radius * 2)
+            ellipse_size = (circle_radius * 2 * self.zoom_factor, circle_radius * 2 * self.zoom_factor)
             
-            # Calculate ellipse_rect and color outside the loop
-            ellipse_rects = [pygame.Rect((pos[j][0] - circle_radius), 
-                                        (pos[j][1] - circle_radius), 
-                                        *ellipse_size) for j in range(self.ParticlesCount)]
-
-            colors = [body.get_star_color_by_mass(mass[j][0]) for j in range(self.ParticlesCount)]
-
-            # Use list comprehension for the loop
-            current_bodies += sum([1 for j in range(self.ParticlesCount) if not body.is_particle_outside_box(pos[j][0], pos[j][1], 0, 0, self.window_size[0], self.window_size[1])])
-
             # Draw particles using the pre-calculated values
             for j in range(self.ParticlesCount):
                 if not body.is_particle_outside_box(pos[j][0], pos[j][1], 0, 0, self.window_size[0], self.window_size[1]):
-                    pygame.draw.ellipse(self.screen, colors[j], ellipse_rects[j])
-       
-            # Add a text annotation for the current time step
-            font = pygame.font.Font(None, 24)
-            time_step_text = font.render(f"Years: {i}/{Nt}", True, (255, 255, 255))
+                    
+                    ellipse_rects = pygame.Rect(((pos[j][0] - circle_radius + self.pan_offset_x) * self.zoom_factor), 
+                                        ((pos[j][1] - circle_radius + self.pan_offset_y) * self.zoom_factor), 
+                                        *ellipse_size)
+                    
+                    color = body.get_star_color_by_mass(mass[j][0])
+                    pygame.draw.ellipse(self.screen, color, ellipse_rects)
+                    current_bodies += 1
+            
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            
+            total_time += elapsed_time
+            iteration_count += 1
+            
+            iter_per_sec = iteration_count / total_time
+            
+            # Text
+            iter_per_sec_text = font.render(f"Iters/second: {iter_per_sec:.2f}", True, (255, 255, 255))
+            time_step_text = font.render(f"Years: {int(i)}/{Nt}", True, (255, 255, 255))
             total_bodies_text = font.render(f"Bodies in view: {current_bodies}", True, (255, 255, 255))
             self.screen.blit(time_step_text, (10, 10))
             self.screen.blit(total_bodies_text, (10, 30))
+            self.screen.blit(iter_per_sec_text, (10, 50))
             
             if self.is_video_enabled:
                 video.make_png(screen=self.screen)
                 
             if show_legend:
-                menuClass.show_legend_sim()
+                menuClass.show_legend_sim(record_enabled=self.is_video_enabled)
             
             if add_black_hole_mode:
-                gt.addText(self.screen, "Click to add a black hole", (10, self.window_size[1] - 40))
+                game_text.addText(self.screen, "Click to add a black hole", (10, self.window_size[1] - 40))
             
             if add_body_mode:
-                gt.addText(self.screen, "Click to add a body", (10, self.window_size[1] - 40))
+                game_text.addText(self.screen, "Click to add a body", (10, self.window_size[1] - 40))
             
             self.clock.tick(60)
             pygame.display.flip()

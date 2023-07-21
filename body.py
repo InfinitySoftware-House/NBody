@@ -129,7 +129,7 @@ def addBlackHoles(pos, mass, vel, acc, N, body_pos):
 
     return pos, mass, vel, acc
 
-def getAcc( pos, mass, G, softening ):
+def getAcc(pos, mass, G, softening):
     """
     Calculate the acceleration on each particle due to Newton's Law 
     pos  is a N x 3 matrix of positions
@@ -150,7 +150,7 @@ def getAcc( pos, mass, G, softening ):
 
     # matrix that stores 1/r^3 for all the pairwise particle separations
     inv_r3 = (dx**2 + dy**2 + dz**2 + softening**2)**(-1.5)
-
+    
     ax = G * (dx * inv_r3) @ mass
     ay = G * (dy * inv_r3) @ mass
     az = G * (dz * inv_r3) @ mass
@@ -159,7 +159,8 @@ def getAcc( pos, mass, G, softening ):
     a = cp.hstack((ax,ay,az))
 
     return a
-	
+
+
 def getEnergy( pos, vel, mass, G ):
 	"""
 	Get kinetic energy (KE) and potential energy (PE) of simulation

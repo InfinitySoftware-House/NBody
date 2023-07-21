@@ -4,14 +4,15 @@ import scipy.constants
 import simulation as sim
 import menu as m
 from pygame.locals import *
+
 # Sim default parameters
 ParticlesCount          = 1000   # Number of bodies
 t                       = 0      # current time of the simulation
-tEnd                    = 1000.0   # time at which simulation ends
+tEnd                    = 10000.0   # time at which simulation ends
 dt                      = 0.01   # timestep
-softening               = 4    # softening length
+softening               = 10    # softening length
 G                       = scipy.constants.G # Newton's Gravitational Constant
-moltiplicatore_tempo    = 1*10**9
+moltiplicatore_tempo    = 10*10**9
 is_video_enabled        = False
 
 # Callbacks
@@ -38,7 +39,8 @@ pygame.init()
 clock = pygame.time.Clock()
 
 window_size = (1280, 720)
-screen = pygame.display.set_mode(window_size, DOUBLEBUF)
+flags = DOUBLEBUF | RESIZABLE | HWSURFACE
+screen = pygame.display.set_mode(window_size, flags)
 screen.set_alpha(None)
 pygame.event.set_allowed([QUIT, KEYDOWN, MOUSEBUTTONDOWN])
 pygame.display.set_caption("N-Body Simulation")
@@ -48,7 +50,6 @@ simulation = sim.Simulation(window_size=window_size, screen=screen, clock=clock,
                                 moltiplicatore_tempo=moltiplicatore_tempo, on_change_particles_count=on_change_particles_count, 
                                 on_softening_change=on_softening_change, toggle_video=toggle_video, moltiplicatore_tempo_change=moltiplicatore_tempo_change, 
                                 on_change_time=on_change_time, on_change_start_span=on_change_start_span, start_span=200)
-
 
 menuClass = m.Menu(screen=screen, window_size=window_size, simulation=simulation, ParticlesCount=ParticlesCount, 
                    softening=softening, moltiplicatore_tempo=moltiplicatore_tempo, is_video_enabled=is_video_enabled, 
