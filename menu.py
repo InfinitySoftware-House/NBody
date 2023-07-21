@@ -65,11 +65,11 @@ class Menu:
             
     def show_legend_sim(self, record_enabled):
         font = pygame.font.Font(None, 22)
-        hide_menu_text = font.render(f"SPACE BAR:     Hide Menu", True, (255, 255, 255))
-        time_step_text = font.render(f"ESC:     Go to menu", True, (255, 255, 255))
-        black_hole_text = font.render(f"B:      Add Black Hole", True, (255, 255, 255))
-        body_text = font.render(f"A:    Add Body", True, (255, 255, 255))
-        stop_recording = font.render(f"T:    Stop Recording", True, (255, 255, 255))
+        hide_menu_text = font.render("SPACE BAR:     Hide Menu", True, (255, 255, 255))
+        time_step_text = font.render("ESC:     Go to menu", True, (255, 255, 255))
+        black_hole_text = font.render("B:      Add Black Hole", True, (255, 255, 255))
+        body_text = font.render("A:    Add Body", True, (255, 255, 255))
+        stop_recording = font.render("T:    Stop Recording", True, (255, 255, 255))
         self.screen.blit(hide_menu_text, (10, 120))
         self.screen.blit(time_step_text, (10, 140))
         self.screen.blit(black_hole_text, (10, 160))
