@@ -1,5 +1,4 @@
 import datetime
-import math
 import os
 import random
 import time
@@ -10,6 +9,7 @@ import simulation_video as sv
 import shutil
 import menu as m
 from game_text import GameText as gt
+import psutil
 
 class Simulation:
     pan_offset_x, pan_offset_y = 0, 0
@@ -40,7 +40,7 @@ class Simulation:
     def run(self):
         show_legend = True
         add_black_hole_mode = False
-        add_body_mode = False    
+        add_body_mode = False  
         
         menuClass = m.Menu(screen=self.screen, window_size=self.window_size, simulation=self, 
                                            ParticlesCount=self.ParticlesCount, softening=self.softening, 
@@ -182,7 +182,7 @@ class Simulation:
                     color = body.get_star_color_by_mass(mass[j][0])
                     pygame.draw.ellipse(self.screen, color, ellipse_rects)
                     current_bodies += 1
-            
+           
             end_time = time.time()
             elapsed_time = end_time - start_time
             
@@ -192,12 +192,10 @@ class Simulation:
             iter_per_sec = iteration_count / total_time
             
             # Text
-            iter_per_sec_text = font.render(f"Iters/second: {iter_per_sec:.2f}", True, (255, 255, 255))
-            time_step_text = font.render(f"Years: {int(i)}/{Nt}", True, (255, 255, 255))
-            total_bodies_text = font.render(f"Bodies in view: {current_bodies}", True, (255, 255, 255))
-            self.screen.blit(time_step_text, (10, 10))
-            self.screen.blit(total_bodies_text, (10, 30))
-            self.screen.blit(iter_per_sec_text, (10, 50))
+            game_text.addText(self.screen, f"Iters/second: {iter_per_sec:.2f}", (10, 50))
+            game_text.addText(self.screen, f"Years: {int(i)}/{Nt}", (10, 10))
+            game_text.addText(self.screen, f"Bodies in view: {current_bodies}", (10, 30))
+            game_text.addText(self.screen, f"RAM used: {psutil.virtual_memory()[3]/1000000000:.2f} GB", (10, self.window_size[1] - 60))
             
             if self.is_video_enabled:
                 video.make_png(screen=self.screen)
@@ -210,7 +208,7 @@ class Simulation:
             
             if add_body_mode:
                 game_text.addText(self.screen, "Click to add a body", (10, self.window_size[1] - 40))
-            
+           
             self.clock.tick(60)
             pygame.display.flip()
             

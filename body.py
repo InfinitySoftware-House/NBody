@@ -61,7 +61,6 @@ def is_particle_outside_box(x, y, xmin, ymin, xmax, ymax):
         return True
     return False
 
-@njit(fastmath=True)
 def addBody(pos, mass, vel, acc, N, body_pos, body_mass_min, body_mass_max):
     """
     Add 3 black holes to the simulation
@@ -107,7 +106,6 @@ def place_particles_in_circle(ParticlesCount, window_size, start_span):
 
     return pos
 
-@njit(fastmath=True)
 def addBlackHoles(pos, mass, vel, acc, N, body_pos):
     """
     Add 3 black holes to the simulation

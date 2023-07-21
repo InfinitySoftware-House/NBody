@@ -8,5 +8,3 @@ class GameText:
         font = pygame.font.Font(None, size)
         label = font.render(text, True, color)
         screen.blit(label, position)
-        pygame.display.flip()
-        self.clock.tick(60)
