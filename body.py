@@ -1,47 +1,45 @@
 import numpy as cp
 from numba import jit
 
-@jit(fastmath=True)
-def get_star_brightness(mass):
-    if 100.0 <= mass <= 250.0:
-        return 10   # Light Sky Blue
-    elif 250.1 <= mass <= 500.0:
-        return 20   # Deep Sky Blue
-    elif 500.1 <= mass <= 800.0:
-        return 50   # White
-    elif 800.1 <= mass <= 1200.0:
-        return 100     # Gold
-    elif 1200.1 <= mass <= 2500.0:
-        return 150     # Orange
-    elif 2500.1 <= mass <= 6000.0:
-        return 200      # Orange Red
-    elif 6000.1 <= mass <= 10000.0:
-        return 225     # Firebrick
-    elif 10000.1 <= mass <= 1e11:
-        return 255      # Dark Red
-    else:
-        return 255
+def normalize_value(value, min_value, max_value):
+    return int(180 + (value - min_value) * (255 - 180) / (max_value - min_value))
 
-@jit(fastmath=True)
+# @jit(fastmath=True)
 def get_star_color_by_mass(mass):
-    if 100.0 <= mass <= 250.0:
-        return (255, 140, 102, get_star_brightness(mass))   # Light Sky Blue
+    if 0 <= mass <= 50.0:
+        return (255, 255, 255, 110)   # Light Sky Blue
+    elif 50.1 <= mass <= 100.0:
+        return (255, 218, 185, 125)     # Deep Sky Blue
+    elif 100.1 <= mass <= 250.0:
+        return (255, 247, 239, 140)   # White
     elif 250.1 <= mass <= 500.0:
-        return (255, 218, 185, get_star_brightness(mass))     # Deep Sky Blue
-    elif 500.1 <= mass <= 800.0:
-        return (255, 247, 239, get_star_brightness(mass))   # White
-    elif 800.1 <= mass <= 1200.0:
-        return (243, 244, 255, get_star_brightness(mass))     # Gold
-    elif 1200.1 <= mass <= 2500.0:
-        return (202, 216, 255, get_star_brightness(mass))     # Orange
-    elif 2500.1 <= mass <= 6000.0:
-        return (170, 191, 255, get_star_brightness(mass))      # Orange Red
-    elif 6000.1 <= mass <= 10000.0:
-        return (155, 176, 255, get_star_brightness(mass))     # Firebrick
-    elif 10000.1 <= mass <= 1e11:
-        return (155, 176, 255, get_star_brightness(mass))       # Dark Red
+        return (243, 244, 255, 180)     # Gold
+    elif 550.1 <= mass <= 1000.0:
+        return (202, 216, 255, 200)     # Orange
+    elif 1000.1 <= mass <= 1200.0:
+        return (170, 191, 255, 220)      # Orange Red
+    elif 1200.1 <= mass <= 1500.0:
+        return (155, 176, 255, 240)     # Firebrick
+    elif 1500.1 <= mass <= 10000:
+        return (155, 176, 255, 255)       # Dark Red
     else:
-        return (155, 176, 255, get_star_brightness(mass))
+        return (155, 176, 255, 255)
+    
+# @jit(fastmath=True)
+def generate_star_mass(star_count, star_classification_mass, star_classification_fraction):
+    mass = cp.array([5.0])
+    desired_shape = (star_count, 1)
+    for type in star_classification_mass:
+        count = star_classification_fraction[type] * star_count
+        count = max(count, 1)
+        tmp = cp.random.uniform(star_classification_mass[type][0]*1*10**2, star_classification_mass[type][1]*1*10**2, size=(int(count), 1))
+        mass = cp.vstack((mass, tmp))
+        
+    num_elements_to_add = desired_shape[0] - mass.shape[0]
+    mass = cp.pad(mass, ((0, num_elements_to_add), (0, 0)), mode='mean')
+    mass[0] = mass.mean()
+    return mass
+
 
 @jit(fastmath=True)
 def is_particle_outside_box(x, y, xmin, ymin, xmax, ymax):
@@ -105,6 +103,21 @@ def place_particles_in_circle(ParticlesCount, window_size, start_span):
 
     return pos
 
+@jit(fastmath=True)
+def is_black_hole(mass):
+    """
+    Check if the mass is a black hole.
+
+    Args:
+    mass: The mass of the particle.
+
+    Returns:
+    True if the mass is a black hole, False otherwise.
+    """
+    if mass >= 1*10**5 and mass <= 1*10**6:
+        return True
+    return False
+
 def addBlackHoles(pos, mass, vel, acc, N, body_pos):
     """
     Add 3 black holes to the simulation
@@ -118,10 +131,7 @@ def addBlackHoles(pos, mass, vel, acc, N, body_pos):
         
     body_pos = cp.array([body_pos[0], body_pos[1], 0])
     # Generate 3 random masses for the black holes
-    bh_mass = cp.random.uniform(100, 10000, size=(N, 1))
-
-    # Set the masses of the black holes to be very large
-    bh_mass *= 1*10**2
+    bh_mass = cp.random.uniform(1*10**4, 1*10**6, size=(N, 1))
 
     # Add the black holes to the simulation
     pos = cp.vstack((pos, body_pos))
