@@ -8,7 +8,7 @@ from pygame.locals import *
 # Sim default parameters
 ParticlesCount          = 1000              # Number of bodies
 t                       = 0                 # current time of the simulation
-tEnd                    = float("inf")      # time at which simulation ends
+tEnd                    = 1_000_000_000     # time at which simulation ends
 dt                      = 0.01              # timestep
 softening               = 20                # softening length
 G                       = scipy.constants.G # Newton's Gravitational Constant
@@ -47,7 +47,7 @@ icon = pygame.image.load("icon.png")
 pygame.display.set_icon(icon)
 clock = pygame.time.Clock()
 
-window_size = (1512,853)
+window_size = (1280,720)
 flags = DOUBLEBUF | RESIZABLE | HWSURFACE
 screen = pygame.display.set_mode(window_size, flags)
 infinite_screen = pygame.Surface((4000, 4000))

@@ -8,6 +8,7 @@ import menu as m
 from game_text import GameText as gt
 import psutil
 from joblib import Parallel, delayed
+import numpy as cp
 
 class Simulation:
     pan_offset_x, pan_offset_y = 0, 0
@@ -19,6 +20,7 @@ class Simulation:
     show_legend = True
     add_black_hole_mode = False
     add_body_mode = False 
+    show_ke = False
     
     pos = []
     mass = []
@@ -67,6 +69,11 @@ class Simulation:
         self.is_settings_menu_open = is_settings_menu_open
         self.surface = surface
         
+    def get_kinetict_energy(self, mass, vel):
+        vel = cp.sqrt(vel[0]**2 + vel[1]**2 + vel[2]**2)
+        Ke = (1/2)*mass*cp.sqrt(vel)
+        return Ke
+        
     def handle_events(self, menuClass, video):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -94,7 +101,7 @@ class Simulation:
                         menuClass.run_menu(menu)
                         
                     if event.key == pygame.K_SPACE:
-                        show_legend = not show_legend
+                        self.show_legend = not self.show_legend
                         
                     if event.key == pygame.K_b:
                         self.add_black_hole_mode = not self.add_black_hole_mode
@@ -114,6 +121,9 @@ class Simulation:
                         self.zoom_factor += self.zoom_increment
                     elif event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
                         self.zoom_factor -= self.zoom_increment
+                    
+                    if event.key == pygame.K_k:
+                        self.show_ke = not self.show_ke
                         
         keyboard_buttons = pygame.key.get_pressed()
     
@@ -158,10 +168,7 @@ class Simulation:
         # Gestire self.pos.shape != mass.shape
         acc = body.getAcc(self.pos, self.mass, self.G, self.softening)
         # Number of timesteps
-        if self.tEnd != float("inf"):
-            Nt = int(np.ceil(self.tEnd/self.dt))
-        else:
-            Nt = "Infinity"
+        Nt = int(np.ceil(self.tEnd/self.dt))
         current_bodies = self.ParticlesCount
 
         total_time = 0
@@ -172,9 +179,8 @@ class Simulation:
         game_text = gt(self.clock, surface=self.surface)
         
         while 1:
-            if self.tEnd != float("inf"):
-                if self.t >= Nt:
-                    break
+            if self.t >= Nt:
+                break
             start_time = time.time()
            
             # (1/2) kick
@@ -223,7 +229,13 @@ class Simulation:
                     pygame.draw.circle(self.surface, color, (self.pos[j][0], self.pos[j][1]), circle_radius * 2)
                 else:
                     ellipse_surface = pygame.Surface((ellipse_size[0], ellipse_size[1]), pygame.SRCALPHA)
-                    color = body.get_star_color_by_mass(self.mass[j][0])
+                   
+                    if self.show_ke:
+                        Ke = self.get_kinetict_energy(self.mass[j][0], self.vel[j])
+                        color = body.get_star_color_by_ke(Ke)
+                    else:
+                        color = body.get_star_color_by_mass(self.mass[j][0])
+                        
                     ellipse_surface.fill(color) 
                     self.surface.blit(ellipse_surface, ellipse_rects)
                 
@@ -238,7 +250,7 @@ class Simulation:
             iter_per_sec = iteration_count / total_time
             
             # Text
-            game_text.addText(self.surface, f"Years: {int(i)}/{Nt}", (10, 10))
+            game_text.addText(self.surface, f"Year: {int(i)}", (10, 10))
             
             if not self.is_video_enabled:
                 game_text.addText(self.surface, f"Iters/second: {iter_per_sec:.2f}", (10, 50))

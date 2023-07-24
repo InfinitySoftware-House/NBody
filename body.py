@@ -2,7 +2,12 @@ import numpy as cp
 from numba import jit
 
 def normalize_value(value, min_value, max_value):
-    return int(180 + (value - min_value) * (255 - 180) / (max_value - min_value))
+    return int(120 + (value - min_value) * (255 - 120) / (max_value - min_value))
+
+def get_star_color_by_ke(ke):
+    colors = [(0, 255, 0), (43, 99, 22), (143, 67, 17), (133, 41, 16), (255, 0, 0)]
+    index = min(range(len(colors)), key=lambda i: abs(colors[i][0] - ke))
+    return colors[index]
 
 # @jit(fastmath=True)
 def get_star_color_by_mass(mass):
@@ -25,7 +30,7 @@ def get_star_color_by_mass(mass):
     else:
         return (155, 176, 255, 255)
     
-# @jit(fastmath=True)
+@jit(fastmath=True)
 def generate_star_mass(star_count, star_classification_mass, star_classification_fraction):
     mass = cp.array([5.0])
     desired_shape = (star_count, 1)
@@ -34,9 +39,14 @@ def generate_star_mass(star_count, star_classification_mass, star_classification
         count = max(count, 1)
         tmp = cp.random.uniform(star_classification_mass[type][0]*1*10**2, star_classification_mass[type][1]*1*10**2, size=(int(count), 1))
         mass = cp.vstack((mass, tmp))
+    
+    if desired_shape[0] < mass.shape[0]:
+        diff = mass.shape[0] - desired_shape[0]
+        mass = mass[:len(mass)-diff]
         
     num_elements_to_add = desired_shape[0] - mass.shape[0]
-    mass = cp.pad(mass, ((0, num_elements_to_add), (0, 0)), mode='mean')
+    if num_elements_to_add > 0:
+        mass = cp.pad(mass, ((0, num_elements_to_add), (0, 0)), mode='mean')
     mass[0] = mass.mean()
     return mass
 
@@ -173,7 +183,7 @@ def getAcc(pos, mass, G, softening):
 
     return a
 
-
+@jit(fastmath=True)
 def getEnergy( pos, vel, mass, G ):
 	"""
 	Get kinetic energy (KE) and potential energy (PE) of simulation
