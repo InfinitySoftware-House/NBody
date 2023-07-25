@@ -70,7 +70,7 @@ class Simulation:
         self.surface = surface
         
     def get_kinetict_energy(self, mass, vel):
-        vel = cp.sqrt(vel[0]**2 + vel[1]**2 + vel[2]**2)
+        vel = cp.sqrt(vel[0]**2 + vel[1]**2 + vel[2]**2)*5
         Ke = (1/2)*mass*cp.sqrt(vel)
         return Ke
         
@@ -111,7 +111,7 @@ class Simulation:
                         self.add_body_mode = not self.add_body_mode
                         self.add_black_hole_mode = False
                         
-                    if event.key == pygame.K_t:
+                    if event.key == pygame.K_r:
                         self.is_video_enabled = not self.is_video_enabled
                         if not self.is_video_enabled:
                             video.make_mp4()
@@ -151,7 +151,6 @@ class Simulation:
                                            moltiplicatore_tempo_change=self.moltiplicatore_tempo_change, clock=self.clock, time=self.tEnd, 
                                            on_change_time=self.on_change_time, on_change_start_span=self.on_change_start_span,
                                            show_settings_menu=self.show_settings_menu, is_settings_menu_open=self.is_settings_menu_open, surface=self.surface)
-        
         # Generate Initial Conditions
         np.random.seed(random.randint(0, self.ParticlesCount))            # set the random number generator seed
 
@@ -179,10 +178,10 @@ class Simulation:
         game_text = gt(self.clock, surface=self.surface)
         
         while 1:
-            if self.t >= Nt:
+            if i >= Nt:
                 break
             start_time = time.time()
-           
+            
             # (1/2) kick
             self.vel += acc * self.dt * self.moltiplicatore_tempo
             
@@ -212,7 +211,7 @@ class Simulation:
             self.surface.fill("black")
             
             current_bodies = 0
-            circle_radius = 0.5
+            circle_radius = 0.8
             if self.ParticlesCount in range(0, 100):
                 circle_radius = 2.5
             
@@ -234,7 +233,7 @@ class Simulation:
                         Ke = self.get_kinetict_energy(self.mass[j][0], self.vel[j])
                         color = body.get_star_color_by_ke(Ke)
                     else:
-                        color = body.get_star_color_by_mass(self.mass[j][0])
+                        color = body.get_star_color_by_vel(self.vel[j])
                         
                     ellipse_surface.fill(color) 
                     self.surface.blit(ellipse_surface, ellipse_rects)
@@ -265,6 +264,11 @@ class Simulation:
                     
                 if self.show_legend:
                     menuClass.show_legend_sim()
+                    
+            if self.show_ke:
+                game_text.addText(self.surface, "Kinetict Energy", (self.window_size[0] - 140, 10))
+            else:
+                game_text.addText(self.surface, "Velocity", (self.window_size[0] - 100, 10))
                 
             if self.is_video_enabled:
                 imp = pygame.image.load("./red_dot.png")

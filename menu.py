@@ -111,7 +111,7 @@ class Menu:
         time_step_text = font.render("ESC:     Go to menu", True, (255, 255, 255))
         black_hole_text = font.render("B:      Add Black Hole", True, (255, 255, 255))
         body_text = font.render("A:    Add Body", True, (255, 255, 255))
-        stop_recording = font.render("T:    Start/Stop Recording", True, (255, 255, 255))
+        stop_recording = font.render("R:    Start/Stop Recording", True, (255, 255, 255))
         show_ke = font.render("K:   Show Kinetic Energy", True, (255,255,255))
         self.surface.blit(hide_menu_text, (10, 120))
         self.surface.blit(time_step_text, (10, 140))

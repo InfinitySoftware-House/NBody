@@ -1,12 +1,40 @@
 import numpy as cp
 from numba import jit
+import pygame
+
+def generate_gradient(start_color, end_color, num_steps):
+    # Calculate the step size for each color channel
+    r_step = (end_color[0] - start_color[0]) / (num_steps - 1)
+    g_step = (end_color[1] - start_color[1]) / (num_steps - 1)
+    b_step = (end_color[2] - start_color[2]) / (num_steps - 1)
+
+    gradient = []
+    for i in range(num_steps):
+        # Calculate the current color value for each channel
+        r = int(start_color[0] + r_step * i)
+        g = int(start_color[1] + g_step * i)
+        b = int(start_color[2] + b_step * i)
+
+        gradient.append((r, g, b))
+
+    return gradient
+
+start_color = (0, 255, 0)  # Green
+end_color = (255, 0, 0)    # Red
+num_steps = 15
+
+colors = generate_gradient(start_color, end_color, num_steps)
 
 def normalize_value(value, min_value, max_value):
     return int(120 + (value - min_value) * (255 - 120) / (max_value - min_value))
 
 def get_star_color_by_ke(ke):
-    colors = [(0, 255, 0), (43, 99, 22), (143, 67, 17), (133, 41, 16), (255, 0, 0)]
     index = min(range(len(colors)), key=lambda i: abs(colors[i][0] - ke))
+    return colors[index]
+
+def get_star_color_by_vel(vel):
+    vel = cp.sqrt(vel[0]**2 + vel[1]**2 + vel[2]**2)*5
+    index = min(range(len(colors)), key=lambda i: abs(colors[i][0] - vel))
     return colors[index]
 
 # @jit(fastmath=True)

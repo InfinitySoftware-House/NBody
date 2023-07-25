@@ -18,7 +18,7 @@ class Video:
     def add_frame(self,screen):
         self.cnt+=1
         fullpath = os.path.join(self.path, self.name + "%08d.png"%self.cnt)
-        pygame.image.save(screen,fullpath)
+        pygame.image.save(screen, fullpath)
 
     #https://stackoverflow.com/questions/44947505/how-to-make-a-movie-out-of-images-in-python
     #https://stackoverflow.com/questions/3561715/using-ffmpeg-to-encode-a-high-quality-video
