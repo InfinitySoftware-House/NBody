@@ -41,19 +41,19 @@ def get_star_color_by_vel(vel):
 @jit(fastmath=True)
 def get_star_color_by_mass(mass):
     if 0 <= mass <= 50.0:
-        return (255, 255, 255, 200)   # Light Sky Blue
+        return (255, 255, 255, 110)   # Light Sky Blue
     elif 50.1 <= mass <= 100.0:
-        return (255, 218, 185, 210)     # Deep Sky Blue
+        return (255, 218, 185, 130)     # Deep Sky Blue
     elif 100.1 <= mass <= 250.0:
-        return (255, 247, 239, 215)   # White
+        return (255, 247, 239, 150)   # White
     elif 250.1 <= mass <= 500.0:
-        return (243, 244, 255, 220)     # Gold
+        return (243, 244, 255, 190)     # Gold
     elif 550.1 <= mass <= 1000.0:
-        return (202, 216, 255, 230)     # Orange
+        return (202, 216, 255, 210)     # Orange
     elif 1000.1 <= mass <= 1200.0:
-        return (170, 191, 255, 240)      # Orange Red
+        return (170, 191, 255, 220)      # Orange Red
     elif 1200.1 <= mass <= 1500.0:
-        return (155, 176, 255, 245)     # Firebrick
+        return (155, 176, 255, 240)     # Firebrick
     elif 1500.1 <= mass <= 10000:
         return (155, 176, 255, 255)       # Dark Red
     else:

@@ -10,6 +10,7 @@ import psutil
 from joblib import Parallel, delayed
 import numpy as cp
 from numba import jit
+import multiprocessing 
 
 class Simulation:
     pan_offset_x, pan_offset_y = 0, 0
@@ -310,4 +311,4 @@ class Simulation:
         menuClass.run_menu(menu)
     
     def run_job(self):
-        Parallel(n_jobs=-1)(delayed(self.run()))
+        Parallel(n_jobs=12)(delayed(self.run()))
