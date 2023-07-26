@@ -15,6 +15,7 @@ G                       = scipy.constants.G # Newton's Gravitational Constant
 moltiplicatore_tempo    = 20*10**9
 is_video_enabled        = False
 is_settings_menu_open   = False
+start_shape             = 0
 
 # Callbacks
 def on_change_particles_count(value):
@@ -40,9 +41,13 @@ def show_settings_menu():
     menuClass.is_settings_menu_open = True
     menuClass.draw_settings_menu(settingsMenu)
     menuClass.run_settings_menu(settingsMenu)
+    
+def start_shape_change(value, val2):
+    simulation.start_shape = val2
 
 # Initialize Pygame
 pygame.init()
+pygame.display.set_caption("N-Body Simulation")
 icon = pygame.image.load("icon.png")
 pygame.display.set_icon(icon)
 clock = pygame.time.Clock()
@@ -53,19 +58,18 @@ screen = pygame.display.set_mode(window_size, flags)
 infinite_screen = pygame.Surface((4000, 4000))
 pygame.display.update()
 pygame.event.set_allowed([QUIT, KEYDOWN, MOUSEBUTTONDOWN])
-pygame.display.set_caption("N-Body Simulation")
 
 simulation = sim.Simulation(window_size=window_size, screen=screen, clock=clock, ParticlesCount=ParticlesCount, t=t, 
                                 tEnd=tEnd, dt=dt, softening=softening, G=G, is_video_enabled=is_video_enabled, 
                                 moltiplicatore_tempo=moltiplicatore_tempo, on_change_particles_count=on_change_particles_count, 
                                 on_softening_change=on_softening_change, toggle_video=toggle_video, moltiplicatore_tempo_change=moltiplicatore_tempo_change, 
                                 on_change_time=on_change_time, on_change_start_span=on_change_start_span, start_span=200,
-                                show_settings_menu=show_settings_menu, is_settings_menu_open=is_settings_menu_open, surface=infinite_screen)
+                                show_settings_menu=show_settings_menu, is_settings_menu_open=is_settings_menu_open, surface=infinite_screen, start_shape=start_shape, start_shape_change=start_shape_change)
 
 menuClass = m.Menu(screen=screen, window_size=window_size, simulation=simulation, ParticlesCount=ParticlesCount, 
                    softening=softening, moltiplicatore_tempo=moltiplicatore_tempo, on_softening_change=on_softening_change, on_change_particles_count=on_change_particles_count, 
                    moltiplicatore_tempo_change=moltiplicatore_tempo_change, clock=clock, time=tEnd, on_change_time=on_change_time, on_change_start_span=on_change_start_span, show_settings_menu=show_settings_menu,
-                   is_settings_menu_open=is_settings_menu_open, surface=infinite_screen)
+                   is_settings_menu_open=is_settings_menu_open, surface=infinite_screen, start_shape_change=start_shape_change)
 
 menu = menuClass.get_menu()
 menu = menuClass.draw_menu(menu)

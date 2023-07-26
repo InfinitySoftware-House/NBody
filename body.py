@@ -2,6 +2,7 @@ import numpy as cp
 from numba import jit
 import pygame
 
+@jit(fastmath=True)
 def generate_gradient(start_color, end_color, num_steps):
     # Calculate the step size for each color channel
     r_step = (end_color[0] - start_color[0]) / (num_steps - 1)
@@ -37,22 +38,22 @@ def get_star_color_by_vel(vel):
     index = min(range(len(colors)), key=lambda i: abs(colors[i][0] - vel))
     return colors[index]
 
-# @jit(fastmath=True)
+@jit(fastmath=True)
 def get_star_color_by_mass(mass):
     if 0 <= mass <= 50.0:
-        return (255, 255, 255, 110)   # Light Sky Blue
+        return (255, 255, 255, 200)   # Light Sky Blue
     elif 50.1 <= mass <= 100.0:
-        return (255, 218, 185, 125)     # Deep Sky Blue
+        return (255, 218, 185, 210)     # Deep Sky Blue
     elif 100.1 <= mass <= 250.0:
-        return (255, 247, 239, 140)   # White
+        return (255, 247, 239, 215)   # White
     elif 250.1 <= mass <= 500.0:
-        return (243, 244, 255, 180)     # Gold
+        return (243, 244, 255, 220)     # Gold
     elif 550.1 <= mass <= 1000.0:
-        return (202, 216, 255, 200)     # Orange
+        return (202, 216, 255, 230)     # Orange
     elif 1000.1 <= mass <= 1200.0:
-        return (170, 191, 255, 220)      # Orange Red
+        return (170, 191, 255, 240)      # Orange Red
     elif 1200.1 <= mass <= 1500.0:
-        return (155, 176, 255, 240)     # Firebrick
+        return (155, 176, 255, 245)     # Firebrick
     elif 1500.1 <= mass <= 10000:
         return (155, 176, 255, 255)       # Dark Red
     else:
@@ -140,6 +141,20 @@ def place_particles_in_circle(ParticlesCount, window_size, start_span):
     pos = cp.column_stack((x, y, z))
 
     return pos
+
+@jit(fastmath=True)
+def place_particles_in_square(ParticlesCount, window_size, start_span):
+    center_x, center_y = window_size[0] / 2, window_size[1] / 2
+
+    # Generate random x and y coordinates within the rectangle boundaries
+    x = cp.random.uniform(center_x - start_span / 2, center_x + start_span / 2, size=ParticlesCount)
+    y = cp.random.uniform(center_y - (start_span * 0.5) / 2, center_y + (start_span * 0.5) / 2, size=ParticlesCount)
+
+    # Set z-coordinate to 0 (assuming 2D space)
+    z = cp.zeros(ParticlesCount)
+
+    # Combine x, y, and z coordinates to get the positions array
+    return cp.column_stack((x, y, z))
 
 @jit(fastmath=True)
 def is_black_hole(mass):

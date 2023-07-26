@@ -9,6 +9,7 @@ from game_text import GameText as gt
 import psutil
 from joblib import Parallel, delayed
 import numpy as cp
+from numba import jit
 
 class Simulation:
     pan_offset_x, pan_offset_y = 0, 0
@@ -21,10 +22,12 @@ class Simulation:
     add_black_hole_mode = False
     add_body_mode = False 
     show_ke = False
+    show_velocity_color = False
     
     pos = []
     mass = []
     vel = []
+    acc = []
     
     star_classification_mass = {
         'O': (16, 50),
@@ -46,7 +49,7 @@ class Simulation:
         'M': 0.76
     }
   
-    def __init__(self, window_size, screen, clock, ParticlesCount, t, tEnd, dt, softening, G, is_video_enabled, moltiplicatore_tempo, on_change_particles_count, on_softening_change, moltiplicatore_tempo_change, toggle_video, on_change_time, on_change_start_span, start_span, show_settings_menu, is_settings_menu_open, surface):
+    def __init__(self, window_size, screen, clock, ParticlesCount, t, tEnd, dt, softening, G, is_video_enabled, moltiplicatore_tempo, on_change_particles_count, on_softening_change, moltiplicatore_tempo_change, toggle_video, on_change_time, on_change_start_span, start_span, show_settings_menu, is_settings_menu_open, surface, start_shape, start_shape_change):
         self.window_size = window_size
         self.screen = screen
         self.clock = clock 
@@ -68,7 +71,10 @@ class Simulation:
         self.show_settings_menu = show_settings_menu
         self.is_settings_menu_open = is_settings_menu_open
         self.surface = surface
-        
+        self.start_shape = start_shape
+        self.start_shape_change = start_shape_change
+    
+    @jit(fastmath=True)
     def get_kinetict_energy(self, mass, vel):
         vel = cp.sqrt(vel[0]**2 + vel[1]**2 + vel[2]**2)*5
         Ke = (1/2)*mass*cp.sqrt(vel)
@@ -82,9 +88,9 @@ class Simulation:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if self.add_black_hole_mode:
-                        self.pos, self.mass, self.vel, acc = body.addBlackHoles(self.pos, self.mass, self.vel, acc, 1, event.pos)
+                        self.pos, self.mass, self.vel, self.acc = body.addBlackHoles(self.pos, self.mass, self.vel, self.acc, 1, event.pos)
                     elif self.add_body_mode:
-                        self.pos, self.mass, self.vel, acc = body.addBody(self.pos, self.mass, self.vel, acc, 1, event.pos, self.mass.min(), self.mass.max())
+                        self.pos, self.mass, self.vel, self.acc = body.addBody(self.pos, self.mass, self.vel, self.acc, 1, event.pos, self.mass.min(), self.mass.max())
                     self.ParticlesCount = len(self.pos)
             elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -124,6 +130,11 @@ class Simulation:
                     
                     if event.key == pygame.K_k:
                         self.show_ke = not self.show_ke
+                        self.show_velocity_color = False
+                        
+                    if event.key == pygame.K_v:
+                        self.show_velocity_color = not self.show_velocity_color
+                        self.show_ke = False
                         
         keyboard_buttons = pygame.key.get_pressed()
     
@@ -150,22 +161,25 @@ class Simulation:
                                            on_change_particles_count=self.on_change_particles_count, 
                                            moltiplicatore_tempo_change=self.moltiplicatore_tempo_change, clock=self.clock, time=self.tEnd, 
                                            on_change_time=self.on_change_time, on_change_start_span=self.on_change_start_span,
-                                           show_settings_menu=self.show_settings_menu, is_settings_menu_open=self.is_settings_menu_open, surface=self.surface)
+                                           show_settings_menu=self.show_settings_menu, is_settings_menu_open=self.is_settings_menu_open, surface=self.surface, start_shape_change=self.start_shape_change)
         # Generate Initial Conditions
         np.random.seed(random.randint(0, self.ParticlesCount))            # set the random number generator seed
 
         self.mass = body.generate_star_mass(self.ParticlesCount, self.star_classification_mass, self.star_classification_fraction)
 
-        self.pos = body.place_particles_in_circle(self.ParticlesCount, self.window_size, self.start_span)
-
+        if self.start_shape == 0:
+            self.pos = body.place_particles_in_circle(self.ParticlesCount, self.window_size, self.start_span)
+        elif self.start_shape == 1:
+            self.pos = body.place_particles_in_square(self.ParticlesCount, self.window_size, self.start_span)
         # Convert to Center-of-Mass frame
         self.vel = np.zeros((self.pos.shape))
         # Video recording settings
         video = sv.Video()
             
+        # var = Tree(self.surface, self.pos)
+        
         # Calculate initial gravitational accelerations
-        # Gestire self.pos.shape != mass.shape
-        acc = body.getAcc(self.pos, self.mass, self.G, self.softening)
+        self.acc = body.getAcc(self.pos, self.mass, self.G, self.softening)
         # Number of timesteps
         Nt = int(np.ceil(self.tEnd/self.dt))
         current_bodies = self.ParticlesCount
@@ -178,21 +192,22 @@ class Simulation:
         game_text = gt(self.clock, surface=self.surface)
         
         while 1:
+            iter_per_sec = 0
             if i >= Nt:
                 break
             start_time = time.time()
             
             # (1/2) kick
-            self.vel += acc * self.dt * self.moltiplicatore_tempo
+            self.vel += self.acc * self.dt * self.moltiplicatore_tempo
             
             # Drift
             self.pos += self.vel * self.dt
             
             # Update accelerations
-            acc = body.getAcc(self.pos, self.mass, self.G, self.softening)
+            self.acc = body.getAcc(self.pos, self.mass, self.G, self.softening)
             
             # (1/2) kick
-            self.vel += acc * self.dt * self.moltiplicatore_tempo
+            self.vel += self.acc * self.dt * self.moltiplicatore_tempo
             
             # Update time
             self.t += self.dt
@@ -214,7 +229,7 @@ class Simulation:
             circle_radius = 0.8
             if self.ParticlesCount in range(0, 100):
                 circle_radius = 2.5
-            
+                
             # Draw particles using the pre-calculated values
             for j in range(self.ParticlesCount):
                 multiplier_size = (self.mass[j][0] - self.mass.min())/(self.mass.max()-self.mass.min()) * 2
@@ -225,16 +240,18 @@ class Simulation:
                 
                 if body.is_black_hole(self.mass[j][0]):
                     color = (255, 255, 255)
-                    pygame.draw.circle(self.surface, color, (self.pos[j][0], self.pos[j][1]), circle_radius * 2)
+                    pygame.draw.circle(self.surface, color, (self.pos[j][0], self.pos[j][1]), circle_radius * 3)
                 else:
                     ellipse_surface = pygame.Surface((ellipse_size[0], ellipse_size[1]), pygame.SRCALPHA)
                    
                     if self.show_ke:
                         Ke = self.get_kinetict_energy(self.mass[j][0], self.vel[j])
                         color = body.get_star_color_by_ke(Ke)
-                    else:
+                    elif self.show_velocity_color:
                         color = body.get_star_color_by_vel(self.vel[j])
-                        
+                    else:
+                        color = body.get_star_color_by_mass(self.mass[j][0])
+                    
                     ellipse_surface.fill(color) 
                     self.surface.blit(ellipse_surface, ellipse_rects)
                 
@@ -250,10 +267,10 @@ class Simulation:
             
             # Text
             game_text.addText(self.surface, f"Year: {int(i)}", (10, 10))
+            game_text.addText(self.surface, f"Stars: {current_bodies}", (10, 30))
             
             if not self.is_video_enabled:
                 game_text.addText(self.surface, f"Iters/second: {iter_per_sec:.2f}", (10, 50))
-                game_text.addText(self.surface, f"Bodies in view: {current_bodies}", (10, 30))
                 game_text.addText(self.surface, f"RAM used: {psutil.virtual_memory()[3]/1000000000:.2f} GB", (10, self.window_size[1] - 60))
                 
                 if self.add_black_hole_mode:
@@ -267,13 +284,13 @@ class Simulation:
                     
             if self.show_ke:
                 game_text.addText(self.surface, "Kinetict Energy", (self.window_size[0] - 140, 10))
-            else:
+            elif self.show_velocity_color:
                 game_text.addText(self.surface, "Velocity", (self.window_size[0] - 100, 10))
-                
+             
             if self.is_video_enabled:
-                imp = pygame.image.load("./red_dot.png")
-                imp = pygame.transform.scale(imp, (20, 20))
-                self.surface.blit(imp, (5, 30))
+                pygame.display.set_caption("N-Body Simulation - Recording")
+            else:
+                pygame.display.set_caption("N-Body Simulation")
             
             self.clock.tick(60)
 
