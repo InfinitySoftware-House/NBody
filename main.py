@@ -6,12 +6,12 @@ import menu as m
 from pygame.locals import *
 
 # Sim default parameters
-ParticlesCount          = 1000              # Number of bodies
-t                       = 0                 # current time of the simulation
-tEnd                    = 1_000_000_000     # time at which simulation ends
-dt                      = 0.01              # timestep
-softening               = 20                # softening length
-G                       = scipy.constants.G # Newton's Gravitational Constant
+ParticlesCount          = 1000                  # Number of bodies
+t                       = 0                     # current time of the simulation
+tEnd                    = 1_000_000_000         # time at which simulation ends
+dt                      = 0.01                  # timestep
+softening               = 20                    # softening length
+G                       = scipy.constants.G     # Newton's Gravitational Constant
 moltiplicatore_tempo    = 20*10**9
 is_video_enabled        = False
 is_settings_menu_open   = False
